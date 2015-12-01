@@ -118,11 +118,14 @@ class Observation(object):
     def __init__(
             self,
             conn=None,
+            stats_conn=None,
             benchmark_id=None,
             queries=None,
             reps=None, ):
 
         self.conn = conn
+        self.stats_index_name = 'benchmark-%s' % datetime.date.today().strftime('%Y.%m.%d')
+        self.stats_conn = stats_conn
         self.benchmark_id = benchmark_id
         self.reps = reps # how many times each query will be executed
 
@@ -280,11 +283,11 @@ class Observation(object):
         }
 
         data = json.dumps(obs, sort_keys=True)
-        path = '%s/obs/%s' % (esbench.STATS_INDEX_NAME, self.observation_id, )
-        resp = self.conn.put(path, data)
+        path = '%s/%s/%s' % (self.stats_index_name, esbench.STATS_TYPE_NAME, self.observation_id)
+        resp = self.stats_conn.put(path, data)
         if resp.status not in [200, 201]:
             logger.error(resp)
-        logger.info("recorded observation into: http://%s:%i/%s", self.conn.host, self.conn.port, path)
+        logger.info("recorded observation into: http://%s:%i/%s", self.stats_conn.host, self.stats_conn.port, path)
         return resp
 
 
@@ -292,12 +295,14 @@ class Observation(object):
 class Benchmark(object):
     """Orchestrates the loading of data and running of observations. """
 
-    def __init__(self, config=None, conn=None):
+    def __init__(self, config=None, conn=None, stats_conn=None):
 
         self.benchmark_id = uuid()
 
         self.config = config
         self.conn = conn
+        self.stats_conn = stats_conn
+        self.stats_index_name = 'benchmark-%s' % datetime.date.today().strftime('%Y.%m.%d')
 
         self.ts_start = None
         self.ts_stop = None
@@ -313,6 +318,7 @@ class Benchmark(object):
 
         observation = obs_cls(
                         conn=self.conn,
+                        stats_conn=self.stats_conn,
                         benchmark_id=self.benchmark_id,
                         queries=self.config['queries'],
                         reps=self.config['config']['reps'],
@@ -353,9 +359,13 @@ class Benchmark(object):
     def run(self, batches):
 
         index_settings = {"settings" : {"index" : {"number_of_shards" : 1, "number_of_replicas" : 0}}}
-        esbench.api.index_create(self.conn, esbench.STATS_INDEX_NAME, index_settings)
+        esbench.api.index_create(self.stats_conn, self.stats_index_name, index_settings)
 
         if not self.config['config']['append']:
+            template = {"template": esbench.TEST_INDEX_NAME, "settings": self.config['index']['settings'], "mappings": self.config['index']['mappings']}
+            esbench.api.template_delete(self.conn, esbench.TEST_INDEX_NAME)
+            esbench.api.template_create(self.conn, esbench.TEST_INDEX_NAME, template)
+
             esbench.api.index_delete(self.conn, esbench.TEST_INDEX_NAME)
             esbench.api.index_create(self.conn, esbench.TEST_INDEX_NAME, self.config['index'])
 
@@ -371,6 +381,9 @@ class Benchmark(object):
 
         logger.info("load complete; loaded total %i lines into index '%s', total size: %i (%.2fmb)", total_count, esbench.TEST_INDEX_NAME, total_size_b, total_size_b/(1<<20))
 
+        esbench.api.template_delete(self.conn, esbench.TEST_INDEX_NAME)
+        resp = esbench.api.index_delete(self.conn, esbench.TEST_INDEX_NAME)
+        logger.info("Cleaning up test index: %s", resp)
 
     def _get_cluster_info(self, cluster_f=esbench.api.cluster_get_info):
 
@@ -406,10 +419,10 @@ class Benchmark(object):
         }
 
         data = json.dumps(stat, sort_keys=True)
-        path = '%s/bench/%s' % (esbench.STATS_INDEX_NAME, self,)
-        resp = self.conn.put(path, data)
+        path = '%s/bench/%s' % (self.stats_index_name, self,)
+        resp = self.stats_conn.put(path, data)
         if resp.status not in [200, 201]:
             raise IOError("failed to record benchmark")
-        logger.info("recorded benchmark into: http://%s:%i/%s", self.conn.host, self.conn.port, path)
+        logger.info("recorded benchmark into: http://%s:%i/%s", self.stats_conn.host, self.stats_conn.port, path)
         return resp
 

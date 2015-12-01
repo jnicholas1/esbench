@@ -39,7 +39,9 @@ curl -XDELETE localhost:9200/esbench_* # delete existing benchmarks
     parser_run = subparsers.add_parser('run', help='run a benchmark', epilog=epilog_run, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser_run.add_argument('-v', '--verbose', action='store_true')
     parser_run.add_argument('--host', type=str, default='localhost', help='elasticsearch host; (%(default)s)')
+    parser_run.add_argument('--statshost', type=str, default='localhost', help='elasticsearch host to record stats to; (%(default)s)')
     parser_run.add_argument('--port', type=int, default=9200, help='elasticsearch port; (%(default)s)')
+    parser_run.add_argument('--statsport', type=int, default=9200, help='elasticsearch port for stats host; (%(default)s)')
 
     parser_run.add_argument('--segments', type=int, metavar='N', default=None, help='if set, run optimize before each observation')
     parser_run.add_argument('--shards', metavar='N', action='store', type=int, help="create test index with N primaries")
@@ -156,14 +158,14 @@ def main():
         format='%(asctime)s %(process)d %(name)s.%(funcName)s:%(lineno)d %(levelname)s %(message)s')
     else: logging.basicConfig(level=logging.INFO)
 
-    with esbench.api.connect(host=args.host, port=args.port) as conn:
+    with esbench.api.connect(host=args.host, port=args.port) as conn, esbench.api.connect(host=args.statshost, port=args.statsport) as stats_conn:
 
         try:
 
             if args.command == 'run':
 
                 config = merge_config(args, load_config(args.config_file_path))
-                benchmark = esbench.bench.Benchmark(config=config, conn=conn)
+                benchmark = esbench.bench.Benchmark(config=config, conn=conn, stats_conn=stats_conn)
                 benchmark.prepare()
                 if config['config']['no_load']:
                     for _ in range(config['config']['observations']):

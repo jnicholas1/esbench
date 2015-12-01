@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def _get_benchmarks(conn=None, stats_index_name=esbench.STATS_INDEX_NAME):
     """Call the ES server for raw benchmark records."""
 
-    path = "%s/bench/_search?sort=benchmark_start:asc&size=100" % (stats_index_name, )
+    path = "%s/_search?sort=benchmark_start:asc&size=100" % (stats_index_name, )
     resp = conn.get(path)
     return resp
 
@@ -75,7 +75,7 @@ def _get_observations(conn=None, benchmark_id=None, stats_index_name=esbench.STA
     if not benchmark_id:
         raise ValueError("invalid 'benchmark_id'")
 
-    path = "%s/obs/_search?q=meta.benchmark_id:%s&sort=meta.observation_start:asc&size=10000" % (stats_index_name, benchmark_id, )
+    path = "%s/%s/_search?q=meta.benchmark_id:%s&sort=meta.observation_start:asc&size=10000" % (stats_index_name, esbench.STATS_TYPE_NAME, benchmark_id, )
     resp = conn.get(path)
     return resp
 

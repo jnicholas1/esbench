@@ -167,12 +167,19 @@ def document_post(conn, index, doctype, data):
     resp = conn.post(path, data)
     return resp
 
+def template_create(conn, template, config=None):
+    data = json.dumps(config)
+    resp = conn.put('_template/%s' % template, data)
+    return resp
+
+def template_delete(conn, template):
+    resp = conn.delete('_template/%s' % template)
+    return resp
 
 def index_create(conn, index, config=None):
     data = json.dumps(config)
     resp = conn.put(index, data)
     return resp
-
 
 def index_delete(conn, index):
     resp = conn.delete(index)
@@ -208,18 +215,18 @@ def index_get_segments(conn, index):
 
 
 def cluster_get_info(conn):
-    path = "_cluster/nodes?settings=true&os=true&process=true&jvm=true&thread_pool=true&network=true&transport=true&http=true&plugin=true"
+    path = "_nodes?settings=true&os=true&process=true&jvm=true&thread_pool=true&network=true&transport=true&http=true&plugin=true"
     resp = conn.get(path)
     return resp
 
 
 def cluster_get_stats(conn):
-    path = "_cluster/nodes/stats?indices=true&os=true&process=true&jvm=true&network=true&transport=true&http=true&fs=true&thread_pool=true"
+    path = "_nodes/stats?indices=true&os=true&process=true&jvm=true&network=true&transport=true&http=true&fs=true&thread_pool=true"
     resp = conn.get(path)
     return resp
 
 
 def cluster_get_fielddata_stats(conn):
-    path = "_nodes/stats/indices/fielddata/*"
+    path = "_stats/fielddata?fields=field*"
     resp = conn.get(path)
     return resp

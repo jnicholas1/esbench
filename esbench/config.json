@@ -56,22 +56,57 @@
     }, 
 
     "index": {
-        "mappings": {
-            "doc": {
-                "_size": {
-                    "enabled": true, 
-                    "store": "yes"
-                }, 
-                "_source": {
-                    "enabled": true
-                }, 
-                "properties": {
-                    "abstract": {
-                        "store": "yes", 
-                        "type": "string"
+        "mappings" : {
+              "doc" : {
+                "_size" : {
+                  "enabled" : true,
+                  "store" : true
+                },
+                "properties" : {
+                  "abstract" : {
+                    "type" : "string",
+                    "store" : true
+                  },
+                  "dates" : {
+                    "properties" : {
+                      "date_produced" : {
+                        "type" : "date",
+                        "format" : "dateOptionalTime"
+                      },
+                      "date_published" : {
+                        "type" : "date",
+                        "format" : "dateOptionalTime"
+                      }
                     }
+                  },
+                  "description" : {
+                    "type" : "string"
+                  },
+                  "doc_ids" : {
+                    "properties" : {
+                      "country" : {
+                        "type" : "string"
+                      },
+                      "date" : {
+                        "type" : "date",
+                        "format" : "dateOptionalTime"
+                      },
+                      "doc_number" : {
+                        "type" : "string"
+                      },
+                      "kind" : {
+                        "type" : "string"
+                      },
+                      "type" : {
+                        "type" : "string"
+                      }
+                    }
+                  },
+                  "title" : {
+                    "type" : "string"
+                  }
                 }
-            }
+              }
         }, 
         "settings": {
             "index": {
