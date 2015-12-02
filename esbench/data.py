@@ -119,7 +119,7 @@ def unzip(fn):
             yield(line.strip())
 
 
-def get_data(nocache=False, urls_f=urls):
+def get_data(nocache=True, urls_f=urls):
     """Get default data provided with the benchmark (US Patent Applications).
 
     Returns an iterator, where each item is a json line with a complete US
@@ -259,7 +259,7 @@ def batches_iterator(lines=None, batch_count=0, max_n=0, max_byte_size=0):
 def args_parser():
     parser = argparse.ArgumentParser(description="esbench USPTO patent assignment downloader.")
     parser.add_argument('-v', '--version', action='version', version=esbench.__version__)
-    parser.add_argument('--nocache', action='store_true', help="if set, delete downloaded data (default: %(default)s)")
+    parser.add_argument('--cache', action='store_false', help="if set, don't delete data (default: %(default)s)")
     return parser
 
 
